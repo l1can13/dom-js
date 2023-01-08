@@ -30,20 +30,36 @@ class ApiService {
             method: 'DELETE',
         });
     }
+
+    update(id, data) {
+        return fetch(`/api/todos/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+    }
 }
 
 // Отвечает за рендер
 class TodoService {
-    toToList;
+    toDoList;
 
     constructor(api) {
         this.api = api;
-        this.toToList = window.document.querySelector('.todo-list');
+        this.toDoList = window.document.querySelector('.todo-list');
         this._handleRemove = this._handleRemove.bind(this);
+        this._handleUpdate = this._handleUpdate.bind(this);
     }
 
     addTodo(number, title, description) {
-        this.toToList.append(this._createTodo(number, title, description));
+        this.toDoList.append(this._createTodo(number, title, description));
+    }
+
+    updateTodo(number, title, description) {
+        console.log(number, title, description);
+        this.toDoList.replaceChild(this._createTodo(number, title, description), this.toDoList.children[number - 1]);
     }
 
     _createTodo(number, title, description) {
@@ -51,8 +67,10 @@ class TodoService {
         container.classList.add('todo-list__item');
         container.cardId = number;
         container.classList.add('card');
+
         const header = document.createElement('div');
         header.classList.add('card__header');
+
         const content = document.createElement('div');
         content.classList.add('card__content');
 
@@ -67,17 +85,24 @@ class TodoService {
         content.append(document.createTextNode(description));
         content.classList.add('card__description');
 
+        const btnUpdate = document.createElement('button');
+        btnUpdate.append(document.createTextNode('Update ToDo'));
+        btnUpdate.classList.add('card__update');
+
         const btnEl = document.createElement('button');
         btnEl.append(document.createTextNode('x'));
         btnEl.classList.add('card__remove');
 
         header.append(numberEl);
         header.append(titleEl);
+        header.append(btnUpdate);
         header.append(btnEl);
 
         container.append(header);
         container.append(content);
+
         btnEl.addEventListener('click', this._handleRemove);
+        btnUpdate.addEventListener('click', this._handleUpdate);
 
         return container;
     }
@@ -91,16 +116,21 @@ class TodoService {
             }
         });
     }
+
+    _handleUpdate(event) {
+        const card = event.target.parentElement.parentElement;
+        const modal = new ModalService(this, this.api, 'update', card);
+        modal.open();
+    }
 }
 
 class MainService {
-    constructor(todoService, modalService, api) {
-        this.modalService = modalService;
+    constructor(todoService, api) {
         this.api = api;
         this.todoService = todoService;
         document.getElementsByClassName('app');
-        this.btn = document.getElementById('addBtn');
-        this.btn.addEventListener('click', (e) => this._onOpenModal(e));
+        this.addBtn = document.getElementById('addBtn');
+        this.addBtn.addEventListener('click', (e) => this._onOpenModal(e));
     }
 
     fetchAllTodo() {
@@ -112,16 +142,20 @@ class MainService {
     }
 
     _onOpenModal() {
+        this.modalService = new ModalService(this.todoService, this.api);
         this.modalService.open();
     }
 }
 
 class ModalService {
-    constructor(todoService, api) {
+    constructor(todoService, api, flag = 'create', card = null) {
         this.api = api;
         this.todoService = todoService;
         this.overlay = document.querySelector('.overlay');
         this.modal = document.querySelector('.modal');
+        this.title = document.querySelector('.modal__title');
+        this.flag = flag;
+        this.card = card;
 
         this.listener = this.close.bind(this);
         document
@@ -129,7 +163,17 @@ class ModalService {
             .addEventListener('click', this.listener);
 
         this.submitBtn = document.querySelector('.submit-btn');
-        this.submitBtn.addEventListener('click', this._onCreate.bind(this));
+
+        if (this.flag === 'create') {
+            this.submitBtn.textContent = 'Создать ToDo';
+            this.submitBtn.addEventListener('click', this._onCreate.bind(this), {once: true});
+            this.title.textContent = 'Добавление ToDo';
+        }
+        else {
+            this.submitBtn.textContent = 'Обновить ToDo';
+            this.submitBtn.addEventListener('click', this._onUpdate.bind(this), {once: true});
+            this.title.textContent = 'Обновление ToDo';
+        }
     }
 
     open() {
@@ -161,6 +205,31 @@ class ModalService {
         this.api.create(formData).then((data) => {
             this.todoService.addTodo(data.id, data.title, data.description);
         });
+
+        form.reset();
+        this.close();
+    }
+
+    _onUpdate(e) {
+        e.preventDefault();
+
+        const formData = {};
+        const form = document.forms[0];
+
+        Array.from(form.elements)
+            .filter((item) => !!item.name)
+            .forEach((elem) => {
+                formData[elem.name] = elem.value;
+            });
+
+        if (!this._validateForm(form, formData)) {
+            return;
+        }
+
+        let cardNumber = this.card.cardId;
+        this.api.update(cardNumber, formData);
+        this.todoService.updateTodo(cardNumber, formData.title, formData.description);
+
         form.reset();
         this.close();
     }
@@ -174,7 +243,6 @@ class ModalService {
         if (!formData.description.length) {
             errors.push('Поле описание должно быть заполнено');
         }
-
         if (errors.length) {
             const errorEl = form.getElementsByClassName('form-errors')[0];
             errorEl.innerHTML = errors.map((er) => `<div>${er}</div>`).join('');
@@ -188,7 +256,5 @@ class ModalService {
 
 const api = new ApiService();
 const todoService = new TodoService(api);
-const modalService = new ModalService(todoService, api);
-const service = new MainService(todoService, modalService, api);
+const service = new MainService(todoService, api);
 service.fetchAllTodo();
-//todo: изменение не реализовано
