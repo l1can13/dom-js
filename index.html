@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="./public/javascript.svg" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;800;900&display=swap"
+            rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Todo list</title>
+        <style>
+            .app {
+                visibility: hidden;
+            }
+            .overlay {
+                visibility: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app container">
+            <header>
+                <h1>ToDo List Application</h1>
+            </header>
+            <main>
+                <section class="add-todo">
+                    <button id="addBtn" type="button">Create todo</button>
+                </section>
+                <section class="todo-list"></section>
+            </main>
+        </div>
+
+        <script type="module" src="/index.js"></script>
+
+        <div class="overlay">
+            <div class="modal" data-modal="2">
+                <svg
+                    class="modal__cross js-modal-close"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24">
+                    <path
+                        d="M23.954 21.03l-9.184-9.095 9.092-9.174-2.832-2.807-9.09 9.179-9.176-9.088-2.81 2.81 9.186 9.105-9.095 9.184 2.81 2.81 9.112-9.192 9.18 9.1z" />
+                </svg>
+                <div class="modal_content">
+                    <div class="modal__title">Добавлене todo</div>
+                    <form class="modal__main">
+                        <label class="modal__control" for="title"
+                            >Наименование:</label
+                        >
+                        <input
+                            class="modal__control modal__control-title"
+                            type="text"
+                            name="title" />
+                        <label class="modal__control" for="description"
+                            >Описание:</label
+                        >
+                        <textarea
+                            class="modal__control modal__control-des"
+                            type="text"
+                            name="description"></textarea>
+
+                        <div class="form-errors"></div>
+
+                        <button class="modal__control submit-btn" type="button">
+                            Создать
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

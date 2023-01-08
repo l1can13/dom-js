@@ -1,0 +1,36 @@
+.card {
+    display: flex;
+    flex-flow: column nowrap;
+
+    border: 1px solid black;
+}
+
+.card__header {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 8px 0;
+    margin-bottom: 12px;
+}
+
+.card__description {
+    padding: 16px;
+    font-size: 20px;
+}
+
+.card__title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    font-size: 24px;
+}
+
+.card__number {
+    padding: 0 16px;
+}
+
+.card__remove {
+    padding: 0 16px;
+    margin-right: 16px;
+}
