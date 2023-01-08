@@ -9,12 +9,17 @@ import './style.css';
  * */
 
 class ApiService {
+
+    fetchNamesById(id) {
+        return fetch(`https://jsonplaceholder.typicode.com/users/${id}`).then((res) => res.json());
+    }
+
     fetchAllTodos() {
-        return fetch('/api/todos').then((res) => res.json());
+        return fetch('https://jsonplaceholder.typicode.com/posts').then((res) => res.json());
     }
 
     create(data) {
-        return fetch('/api/todos', {
+        return fetch('https://jsonplaceholder.typicode.com/posts', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -26,14 +31,14 @@ class ApiService {
     }
 
     remove(id) {
-        return fetch(`/api/todos/${id}`, {
+        return fetch(`https://jsonplaceholder.typicode.com/posts/${id}`, {
             method: 'DELETE',
         });
     }
 
     update(id, data) {
-        return fetch(`/api/todos/${id}`, {
-            method: 'PUT',
+        return fetch(`https://jsonplaceholder.typicode.com/posts/${id}`, {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -53,19 +58,19 @@ class TodoService {
         this._handleUpdate = this._handleUpdate.bind(this);
     }
 
-    addTodo(number, title, description) {
-        this.toDoList.append(this._createTodo(number, title, description));
+    addTodo(number, title, description, userId) {
+        this.toDoList.append(this._createTodo(number, title, description, userId));
     }
 
-    updateTodo(number, title, description) {
-        console.log(number, title, description);
-        this.toDoList.replaceChild(this._createTodo(number, title, description), this.toDoList.children[number - 1]);
+    updateTodo(card, title, description, userId) {
+        this.toDoList.replaceChild(this._createTodo(card.cardId, title, description, userId), card);
     }
 
-    _createTodo(number, title, description) {
+    _createTodo(number, title, description, userId) {
         const container = document.createElement('div');
         container.classList.add('todo-list__item');
         container.cardId = number;
+        container.cardUserId = userId;
         container.classList.add('card');
 
         const header = document.createElement('div');
@@ -74,35 +79,40 @@ class TodoService {
         const content = document.createElement('div');
         content.classList.add('card__content');
 
-        const numberEl = document.createElement('h3');
-        numberEl.append(document.createTextNode(number));
-        numberEl.classList.add('card__number');
+        const numberElement = document.createElement('h3');
+        numberElement.append(document.createTextNode('№' + number));
+        numberElement.classList.add('card__number');
 
-        const titleEl = document.createElement('h3');
-        titleEl.append(document.createTextNode(title));
-        titleEl.classList.add('card__title');
+        const userIdElement = document.createElement('h3');
+        this.api.fetchNamesById(userId).then((result) => userIdElement.append(document.createTextNode('User: '+ result.username)));
+        userIdElement.classList.add('card__userId');
+
+        const titleElement = document.createElement('h3');
+        titleElement.append(document.createTextNode(title));
+        titleElement.classList.add('card__title');
 
         content.append(document.createTextNode(description));
         content.classList.add('card__description');
 
-        const btnUpdate = document.createElement('button');
-        btnUpdate.append(document.createTextNode('Update ToDo'));
-        btnUpdate.classList.add('card__update');
+        const updateButton = document.createElement('button');
+        updateButton.append(document.createTextNode('Update'));
+        updateButton.classList.add('card__update');
 
-        const btnEl = document.createElement('button');
-        btnEl.append(document.createTextNode('x'));
-        btnEl.classList.add('card__remove');
+        const deleteButton = document.createElement('button');
+        deleteButton.append(document.createTextNode('x'));
+        deleteButton.classList.add('card__remove');
 
-        header.append(numberEl);
-        header.append(titleEl);
-        header.append(btnUpdate);
-        header.append(btnEl);
+        header.append(numberElement);
+        header.append(userIdElement);
+        header.append(titleElement);
+        header.append(updateButton);
+        header.append(deleteButton);
 
         container.append(header);
         container.append(content);
 
-        btnEl.addEventListener('click', this._handleRemove);
-        btnUpdate.addEventListener('click', this._handleUpdate);
+        updateButton.addEventListener('click', this._handleUpdate);
+        deleteButton.addEventListener('click', this._handleRemove);
 
         return container;
     }
@@ -136,7 +146,7 @@ class MainService {
     fetchAllTodo() {
         this.api.fetchAllTodos().then((todos) => {
             todos.forEach((todo) =>
-                this.todoService.addTodo(todo.id, todo.title, todo.description)
+                this.todoService.addTodo(todo.id, todo.title, todo.body, todo.userId)
             );
         });
     }
@@ -177,6 +187,7 @@ class ModalService {
     }
 
     open() {
+        document.forms[0].getElementsByClassName('form-errors')[0].innerHTML = '';
         this.modal.classList.add('active');
         this.overlay.classList.add('active');
     }
@@ -203,7 +214,7 @@ class ModalService {
         }
 
         this.api.create(formData).then((data) => {
-            this.todoService.addTodo(data.id, data.title, data.description);
+            this.todoService.addTodo(data.id, data.title, data.description, data.userId);
         });
 
         form.reset();
@@ -228,7 +239,7 @@ class ModalService {
 
         let cardNumber = this.card.cardId;
         this.api.update(cardNumber, formData);
-        this.todoService.updateTodo(cardNumber, formData.title, formData.description);
+        this.todoService.updateTodo(this.card, formData.title, formData.description, formData.userId);
 
         form.reset();
         this.close();
@@ -236,7 +247,9 @@ class ModalService {
 
     _validateForm(form, formData) {
         const errors = [];
-        //вместо if используются отдельные функции-валидаторы
+        if (formData.userId >= 11 || formData.userId <= 0) {
+            errors.push('Поле UserId должно содержать число от 1 до 10');
+        }
         if (formData.title.length >= 30) {
             errors.push('Поле наименование должно иметь не более 30 символов');
         }
