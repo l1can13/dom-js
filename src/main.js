@@ -129,7 +129,9 @@ class TodoService {
 
     _handleUpdate(event) {
         const card = event.target.parentElement.parentElement;
-        const modal = new ModalService(this, this.api, 'update', card);
+        const title = card.children[0].children[2];
+        const description = card.children[1];
+        const modal = new ModalService(this, this.api, 'update', card, title, description);
         modal.open();
     }
 }
@@ -158,14 +160,21 @@ class MainService {
 }
 
 class ModalService {
-    constructor(todoService, api, flag = 'create', card = null) {
+    constructor(todoService, api, flag = 'create', card = null, titleOld = null, descriptionOld = null) {
         this.api = api;
         this.todoService = todoService;
         this.overlay = document.querySelector('.overlay');
         this.modal = document.querySelector('.modal');
         this.title = document.querySelector('.modal__title');
+        this.controlTitle = document.querySelector('.modal__control-title');
+        this.description = document.querySelector('.modal__control-des');
         this.flag = flag;
         this.card = card;
+        this.titleOld = titleOld;
+        this.descriptionOld = descriptionOld;
+        this.createBind = this._onCreate.bind(this);
+        this.updateBind = this._onUpdate.bind(this);
+
 
         this.listener = this.close.bind(this);
         document
@@ -176,12 +185,14 @@ class ModalService {
 
         if (this.flag === 'create') {
             this.submitBtn.textContent = 'Создать ToDo';
-            this.submitBtn.addEventListener('click', this._onCreate.bind(this), {once: true});
+            this.submitBtn.addEventListener('click', this.createBind);
             this.title.textContent = 'Добавление ToDo';
         }
         else {
+            this.controlTitle.value = this.titleOld.textContent;
+            this.description.textContent = this.descriptionOld.textContent;
             this.submitBtn.textContent = 'Обновить ToDo';
-            this.submitBtn.addEventListener('click', this._onUpdate.bind(this), {once: true});
+            this.submitBtn.addEventListener('click', this.updateBind);
             this.title.textContent = 'Обновление ToDo';
         }
     }
@@ -193,6 +204,8 @@ class ModalService {
     }
 
     close() {
+        this.submitBtn.removeEventListener('click', this.updateBind);
+        this.submitBtn.removeEventListener('click', this.createBind);
         this.modal.classList.remove('active');
         this.overlay.classList.remove('active');
     }
