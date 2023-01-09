@@ -38,7 +38,7 @@
     text-align: center;
     padding: 30px;
     border-radius: 3px;
-    background-color: #fff;
+    background-color: #e8eaed;
     transition: 0.3s all;
 }
 
@@ -76,7 +76,7 @@
     margin: 8px 0;
 }
 
-.modal__control-title {
+.modal__control-title, .modal__control-aut {
     width: 400px;
 }
 
